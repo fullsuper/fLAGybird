@@ -15,76 +15,107 @@ namespace FlappyBirdTeam
 
         #region  
 
-        int x_first = 300;
-        int x_second = 600;
-
-        int y_first = -200;
-        int y_second = -300;
-
-        int x_bird = 40;
-        int y_bird = 200;
         Timer tmRunPipe,tmDropBird;
 
         Random rd;
-        bool isFlying = true;
+        int score = 0;
+        int stepDrop = 0;
 
+        string imgflyingbird;
+        string imgdroppingbird;
+        bool isPause = false;
+        int highscore = 0;
         #endregion
 
 
-
-        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        public Form1(string background, string bird, string drop)
         {
-            if (e.KeyData == Keys.Space || e.KeyCode == Keys.Space)
-            {
-                y_bird -= 50;
-                FlyingBird.Location = new Point(x_bird, y_bird);
-                FlyingBird.BackgroundImage = Image.FromFile("E:\\VS\\FlappyBirdTeam\\FlappyBirdTeam\\Image\\dropbird2.png");
-                isFlying = true;
-            }
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+
+            // Set the MaximizeBox to false to remove the maximize box.
+            this.MaximizeBox = false;
+
+            // Set the MinimizeBox to false to remove the minimize box.
+            this.MinimizeBox = false;
+
+            // Set the start position of the form to the center of the screen.
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            // Display the form as a modal dialog box.
+            InitializeComponent();
+            this.DoubleBuffered = true;
+            this.BackgroundImage = Image.FromFile(background);
+            imgflyingbird = bird;
+            imgdroppingbird = drop;
+            FlyingBird.BackgroundImage = Image.FromFile(bird);
         }
 
-
-        public Form1()
+        private void loadNewGame()
         {
-            InitializeComponent();
-            //this.DoubleBuffered = true;
+            pipeup1.Left = pipedown1.Left = 300;
+            pipeup2.Left = pipedown2.Left = 600;
+
+            pipeup1.Top = -200;
+            pipedown1.Top = pipeup1.Bottom + 100;
+            pipeup2.Top = -300;
+            pipedown2.Top = pipeup2.Bottom + 100;
+
+            FlyingBird.Top = 200;
+            score = 0;
+        }
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyData == Keys.Space)
+            {
+                stepDrop = 0;
+                FlyingBird.Top -= 50;
+                FlyingBird.BackgroundImage = Image.FromFile(imgflyingbird);
+            }
         }
 
         private void btnStart_Click(object sender, EventArgs e)
         {
           //  btnStart.Hide();
             btnStart.Dispose();
-
+            loadNewGame();
             tmRunPipe = new Timer();
             tmRunPipe.Start();
+            lblScore.Text = "0";
+            score = 0;
+
             
             tmRunPipe.Tick += TmRunPipe_Tick;
-            tmRunPipe.Interval = 10;
+            tmRunPipe.Interval = 5;
 
             tmDropBird = new Timer();
             tmDropBird.Tick += TmDropBird_Tick;
-            tmDropBird.Interval = 100;
+            tmDropBird.Interval = 60;
             tmDropBird.Start();
+            
         }
 
         private void TmDropBird_Tick(object sender, EventArgs e)
         {
-            y_bird+=10;
-            FlyingBird.Location = new Point(x_bird,y_bird);
+            stepDrop++;
+            FlyingBird.Top += 10;
         }
 
         private void TmRunPipe_Tick(object sender, EventArgs e)
         {
-            x_first -= 2;
-            x_second -= 2;
-            pipeup1.Location = new Point(x_first, y_first);
-            pipeup2.Location = new Point(x_second, y_second );
-            pipedown1.Location = new Point(x_first,y_first +600);
-            pipedown2.Location = new Point(x_second, y_second+600);
-            if (isFlying)
+
+            pipeup1.Left-=4;
+            pipeup2.Left -= 4;
+            pipedown1.Left -= 4;
+            pipedown2.Left -= 4;
+
+            if(pipeup1.Right <= FlyingBird.Left || pipeup2.Right <= FlyingBird.Left)
             {
-                FlyingBird.BackgroundImage = Image.FromFile("E:\\VS\\FlappyBirdTeam\\FlappyBirdTeam\\Image\\flybird2.png");
-                isFlying = false;
+                score++;
+                lblScore.Text = (score/11).ToString();
+            }
+            if (stepDrop == 3)
+            {
+                FlyingBird.BackgroundImage = Image.FromFile(imgdroppingbird);
             }
             Reload();
         }
@@ -92,42 +123,77 @@ namespace FlappyBirdTeam
         {
             if (isGameOver())
             {
+                if (highscore < score)
+                {
+                    highscore = score;
+                    lblHS.Text = lblScore.Text;
+                    
+                }
                 tmRunPipe.Stop();
                 tmDropBird.Stop();
+                btnStart = new Button()
+                {
+                    Location = new Point(214, 209),
+                    Width = 100,
+                    Height = 60,
+                    BackgroundImageLayout = ImageLayout.Stretch,
+                    BackgroundImage = Image.FromFile("E:\\VS\\FlappyBirdTeam\\FlappyBirdTeam\\Image\\playbutton.png")
+                };
+                this.Controls.Add(btnStart);
+                btnStart.Click += btnStart_Click;
                 MessageBox.Show("Gem au vờ");
             }
             //random khe
-            if (x_first <= -50)
+            if (pipeup1.Right <= 0)
             {
                 rd = new Random();
-                y_first = -500 + rd.Next(150,350);
-                x_first = 600;
-                pipeup1.Location = new Point(600, y_first);
-                pipedown1.Location = new Point(600, y_first + 600);
+                int num = rd.Next(-380, -180);
+                pipeup1.Left = pipeup2.Right+250;
+                pipeup1.Top = num;
+                pipedown1.Left = pipeup2.Right + 250;
+                pipedown1.Top = num +600;
             }
-            if (x_second <= -50)
+            if (pipeup2.Right <= 0)
             {
                 rd = new Random();
-                y_second = -500 + rd.Next(150,350);
-                x_second = 600;
-                pipeup2.Location = new Point(600, y_second);
-                pipedown2.Location = new Point(600, y_second + 600);
-                
+                int num = rd.Next(-380, -180);
+                pipeup2.Left = pipeup1.Right + 250;
+                pipeup2.Top = num;
+                pipedown2.Left = pipeup1.Right + 250;
+                pipedown2.Top = num + 600;
             }
-            
-
         }
 
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+            if (!isPause)
+            {
+                tmDropBird.Stop();
+                tmRunPipe.Stop();
+            }
+            else
+            {
+                tmDropBird.Start();
+                tmRunPipe.Start();
+            }
+            isPause = !isPause;
+        }
+
+        private void Form1_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Program.gameplay.Show();
+        }
 
         public bool isGameOver()
         {
-            if (x_first > x_bird && x_first < x_bird + 50)
-                if (y_bird < y_first + 500 || y_bird + 40 > y_first + 600)
+            
+            if ((pipedown1.Left +4 < FlyingBird.Left && pipedown1.Right -4 > FlyingBird.Left)|| (pipedown1.Left +4 < FlyingBird.Right && pipedown1.Right -4 > FlyingBird.Right))
+                if (FlyingBird.Top+5 < pipeup1.Bottom || FlyingBird.Bottom-5 > pipedown1.Top)
                     return true;
-            if (x_second > x_bird && x_second < x_bird + 50)
-                if (y_bird < y_second + 500 || y_bird + 40 > y_second + 600)
+            if ((pipedown2.Left + 4 < FlyingBird.Left && pipedown2.Right -4 > FlyingBird.Left) || (pipedown2.Left +4< FlyingBird.Right && pipedown2.Right - 4 > FlyingBird.Right))
+                if (FlyingBird.Top +5 < pipeup2.Bottom || FlyingBird.Bottom-5 > pipedown2.Top)
                     return true;
-            if (y_bird > 420 || y_bird < 0)
+            if (FlyingBird.Top <= 0 || FlyingBird.Bottom >= 500)
                 return true;
             return false;
         }
